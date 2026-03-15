@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flourish · Client Intelligence Intake</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #D4537E;
+    --pink-dark: #993556;
+    --pink-light: #FBEAF0;
+    --pink-mid: #ED93B1;
+    --black: #0a0608;
+    --surface: #110b0e;
+    --surface2: #1a1016;
+    --surface3: #221520;
+    --border: rgba(212,83,126,0.18);
+    --border-subtle: rgba(255,255,255,0.07);
+    --text: #f5f0f2;
+    --text-muted: rgba(245,240,242,0.5);
+    --text-dim: rgba(245,240,242,0.28);
+    --red: #E24B4A;
+    --amber: #EF9F27;
+    --green: #5DCAA5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(212,83,126,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,83,126,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* Header */
+  .header {
+    padding: 32px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .header-left {}
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--pink);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .header-title {
+    font-size: 32px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .header-title em {
+    font-family: 'DM Serif Display', serif;
+    font-style: italic;
+    color: var(--pink);
+  }
+  .header-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .header-badge {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pink);
+    background: rgba(212,83,126,0.1);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+
+  /* Progress */
+  .progress-wrap { margin-bottom: 40px; }
+  .progress-steps { display: flex; gap: 0; }
+  .progress-step {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid var(--border-subtle);
+    border-right: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .progress-step:first-child { border-radius: 8px 0 0 8px; }
+  .progress-step:last-child { border-right: 1px solid var(--border-subtle); border-radius: 0 8px 8px 0; }
+  .progress-step.active { background: rgba(212,83,126,0.08); border-color: var(--border); }
+  .progress-step.done { border-color: rgba(212,83,126,0.3); }
+  .ps-num {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+  }
+  .progress-step.active .ps-num { color: var(--pink); }
+  .progress-step.done .ps-num { color: var(--pink-dark); }
+  .ps-name { font-size: 13px; color: var(--text-muted); font-weight: 400; }
+  .progress-step.active .ps-name { color: var(--text); }
+  .progress-step.done .ps-name { color: var(--text-muted); }
+  .ps-bar {
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 2px;
+    background: var(--pink);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .progress-step.active .ps-bar { opacity: 1; }
+
+  /* Sections */
+  .section { display: none; }
+  .section.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .card-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* Fields */
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+  }
+  label .req { color: var(--pink); margin-left: 3px; }
+  input[type=text], textarea, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+  input[type=text]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--pink);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+  select { cursor: pointer; }
+  select option { background: #1a1016; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* Tag selects */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .tag {
+    font-size: 12px;
+    font-weight: 400;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    color: var(--text-muted);
+    background: transparent;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .tag:hover { border-color: var(--border); color: var(--text); }
+  .tag.sel { background: rgba(212,83,126,0.1); border-color: var(--pink); color: var(--pink); font-weight: 500; }
+
+  /* Pain cards */
+  .pain-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .pain-card {
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface2);
+  }
+  .pain-card:hover { border-color: var(--border); }
+  .pain-card.sel { border-color: var(--pink); background: rgba(212,83,126,0.07); }
+  .pain-card h4 { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 5px; }
+  .pain-card p { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+  .pain-card.sel h4 { color: var(--pink); }
+
+  /* Severity dots */
+  .sev-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .sev-label { font-size: 12px; color: var(--text-muted); flex: 1; }
+  .sev-dots { display: flex; gap: 6px; }
+  .dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.1s;
+  }
+  .dot.on { background: var(--pink); border-color: var(--pink); }
+
+  /* Claims */
+  .claim-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); }
+  .claim-row:last-of-type { border-bottom: none; }
+  .claim-row input { flex: 1; }
+  .claim-row select { width: 130px; flex-shrink: 0; font-size: 12px; }
+  .add-btn {
+    font-size: 12px;
+    color: var(--pink);
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
+  }
+  .add-btn:hover { background: rgba(212,83,126,0.06); border-color: var(--pink); }
+
+  /* Buttons */
+  .btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; }
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary { background: var(--pink); color: white; }
+  .btn-primary:hover { background: var(--pink-dark); }
+  .btn-secondary { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+  .btn-secondary:hover { color: var(--text); border-color: var(--border); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Output */
+  .output-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .out-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pink); margin-bottom: 8px; }
+  .out-title { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
+  .out-sub { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px; }
+  .metric-num { font-family: 'DM Serif Display', serif; font-size: 28px; line-height: 1; margin-bottom: 6px; }
+  .metric-num.red { color: var(--red); }
+  .metric-num.amber { color: var(--amber); }
+  .metric-num.pink { color: var(--pink); }
+  .metric-num.dim { color: var(--text-muted); }
+  .metric-label { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+  /* AI output area */
+  .ai-output {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    min-height: 120px;
+  }
+  .ai-section-title {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--pink);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ai-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .ai-content { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+  .ai-content p { margin-bottom: 10px; }
+  .ai-content p:last-child { margin-bottom: 0; }
+  .ai-content strong { color: var(--text); font-weight: 500; }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 20px 0;
+  }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--pink);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Friction table */
+  .friction-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  .friction-table th {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .friction-table td {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .friction-table tr:last-child td { border-bottom: none; }
+  .friction-table td:first-child { color: var(--text); font-weight: 400; }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .badge-red { background: rgba(226,75,74,0.15); color: #F09595; border: 1px solid rgba(226,75,74,0.25); }
+  .badge-amber { background: rgba(239,159,39,0.12); color: #FAC775; border: 1px solid rgba(239,159,39,0.2); }
+  .badge-green { background: rgba(93,202,165,0.1); color: #5DCAA5; border: 1px solid rgba(93,202,165,0.2); }
+  .badge-gray { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+  .badge-pink { background: rgba(212,83,126,0.12); color: var(--pink-mid); border: 1px solid var(--border); }
+
+  /* Promise bar */
+  .promise-bar {
+    background: rgba(212,83,126,0.06);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .promise-text { font-size: 13px; color: var(--text-muted); flex: 1; line-height: 1.6; }
+  .promise-text strong { color: var(--text); font-weight: 500; }
+  .promise-text em { color: var(--pink); font-style: normal; }
+
+  /* Workflow vis */
+  .workflow { display: flex; gap: 0; border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; margin-top: 4px; }
+  .wf { flex: 1; padding: 12px 10px; border-right: 1px solid var(--border-subtle); min-width: 0; }
+  .wf:last-child { border-right: none; }
+  .wf.broken { background: rgba(226,75,74,0.07); }
+  .wf.warn { background: rgba(239,159,39,0.06); }
+  .wf.ok { background: var(--surface2); }
+  .wf-label { font-size: 9px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 4px; }
+  .wf.broken .wf-label { color: #F09595; }
+  .wf.warn .wf-label { color: #FAC775; }
+  .wf.ok .wf-label { color: var(--text-dim); }
+  .wf-name { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .wf-note { font-size: 11px; line-height: 1.4; }
+  .wf.broken .wf-note { color: #F09595; }
+  .wf.warn .wf-note { color: #FAC775; }
+  .wf.ok .wf-note { color: var(--text-dim); }
+
+  /* API key input */
+  .api-notice {
+    background: rgba(212,83,126,0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .api-notice p { font-size: 12px; color: var(--text-muted); flex: 1; line-height: 1.5; }
+  .api-notice p strong { color: var(--text); }
+  .api-notice input { width: 280px; flex-shrink: 0; font-size: 12px; font-family: monospace; }
+
+  /* Divider */
+  hr { border: none; border-top: 1px solid var(--border-subtle); margin: 24px 0; }
+
+  /* Responsive */
+  @media (max-width: 680px) {
+    .grid-2, .grid-3, .pain-grid, .metric-grid { grid-template-columns: 1fr; }
+    .header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .progress-steps { flex-wrap: wrap; }
+    .progress-step { flex: 1 1 40%; }
+    .workflow { flex-direction: column; }
+    .wf { border-right: none; border-bottom: 1px solid var(--border-subtle); }
+    .wf:last-child { border-bottom: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">Flourish</div>
+      <div class="header-title">Client <em>Intelligence</em> Intake</div>
+      <div class="header-sub">Capture brand context · Generate personalised diagnosis · 15 minutes</div>
+    </div>
+    <div class="header-badge">Internal · Demo</div>
+  </div>
+
+  <div class="api-notice">
+    <p><strong>AI-powered diagnosis</strong> — enter your Anthropic API key to generate live diagnoses. Leave blank to use the pre-built Nike demo output.</p>
+    <input type="password" id="api-key" placeholder="sk-ant-..." />
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-steps">
+      <div class="progress-step active" id="tab-1" onclick="goTo(1)">
+        <div class="ps-num">01</div>
+        <div class="ps-name">Brand</div>
+        <div class="ps-bar"></div>
+      </div>
+      <div class="progress-step" id="tab-2" onclick="goTo(2)">
+        <div class="ps-num">02</div>
+        <div class="ps-name">Pain points</div>
+        <div class="ps-bar"></div>
+      </div>
+      <div class="progress-step" id="tab-3" onclick="goTo(3)">
+        <div class="ps-num">03</div>
+        <div class="ps-name">Claims</div>
+        <div class="ps-bar"></div>
+      </div>
+      <div class="progress-step" id="tab-4" onclick="goTo(4)">
+        <div class="ps-num">04</div>
+        <div class="ps-name">Diagnosis</div>
+        <div class="ps-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: BRAND -->
+  <div class="section active" id="sec-1">
+    <div class="card">
+      <div class="card-title">Brand basics</div>
+      <div class="card-sub">What you can gather from their website and LinkedIn in 5 minutes</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Brand name <span class="req">*</span></label>
+          <input type="text" id="brand-name" placeholder="e.g. Unilever, Reckitt, Nike..." />
+        </div>
+        <div class="field">
+          <label>Sector</label>
+          <select id="sector">
+            <option value="">Select sector</option>
+            <option>FMCG / Consumer goods</option>
+            <option>Pharma / Healthcare</option>
+            <option>Financial services</option>
+            <option>Beauty / Personal care</option>
+            <option>Food & Beverage</option>
+            <option>Sportswear / Apparel</option>
+            <option>Technology</option>
+            <option>Retail</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Markets</label>
+        <div class="tag-row" id="markets">
+          <div class="tag" onclick="sel(this,'markets')">1–5</div>
+          <div class="tag sel" onclick="sel(this,'markets')">6–15</div>
+          <div class="tag" onclick="sel(this,'markets')">16–30</div>
+          <div class="tag" onclick="sel(this,'markets')">30–100</div>
+          <div class="tag" onclick="sel(this,'markets')">100+</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Campaigns per year</label>
+        <div class="tag-row" id="campaigns">
+          <div class="tag" onclick="sel(this,'campaigns')">Under 50</div>
+          <div class="tag sel" onclick="sel(this,'campaigns')">50–200</div>
+          <div class="tag" onclick="sel(this,'campaigns')">200–500</div>
+          <div class="tag" onclick="sel(this,'campaigns')">500+</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>What does the brand stand for?</label>
+        <textarea id="brand-vision" placeholder="One or two sentences — their brand purpose or CMO's stated ambition..."></textarea>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Who is in the room?</div>
+      <div class="card-sub">Shapes which part of the diagnosis we lead with</div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Primary contact</label>
+          <select id="contact">
+            <option>CMO / VP Marketing</option>
+            <option>Marketing Director</option>
+            <option>Legal / Compliance</option>
+            <option>Head of Brand</option>
+            <option>Agency partner</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Legal present?</label>
+          <select id="legal">
+            <option>Yes, in the room</option>
+            <option>Yes, not present</option>
+            <option>No</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Conversation stage</label>
+          <select id="stage">
+            <option>First demo</option>
+            <option>Second meeting</option>
+            <option>Evaluation</option>
+            <option>Near close</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <span style="font-size:12px;color:var(--text-dim)">Step 1 of 4</span>
+      <button class="btn btn-primary" onclick="goTo(2)">Next: pain points →</button>
+    </div>
+  </div>
+
+  <!-- SECTION 2: PAIN POINTS -->
+  <div class="section" id="sec-2">
+    <div class="card">
+      <div class="card-title">Where does the architecture break?</div>
+      <div class="card-sub">Select all that apply — these become the diagnostic focus areas</div>
+      <div class="pain-grid">
+        <div class="pain-card sel" onclick="this.classList.toggle('sel')">
+          <h4>Legal latency</h4>
+          <p>Review cycles running 6–12 weeks. Campaigns missing cultural windows.</p>
+        </div>
+        <div class="pain-card" onclick="this.classList.toggle('sel')">
+          <h4>CMO vision drift</h4>
+          <p>Junior teams and agencies briefing from caution, not from strategy.</p>
+        </div>
+        <div class="pain-card sel" onclick="this.classList.toggle('sel')">
+          <h4>Claims without context</h4>
+          <p>Legal receives briefs stripped of evidence. Compiles context themselves.</p>
+        </div>
+        <div class="pain-card" onclick="this.classList.toggle('sel')">
+          <h4>Shadow AI use</h4>
+          <p>Teams using personal Claude / ChatGPT. Outputs entering campaigns unreviewed.</p>
+        </div>
+        <div class="pain-card" onclick="this.classList.toggle('sel')">
+          <h4>Global inconsistency</h4>
+          <p>Brand standards fracturing across markets. Expensive rework post-launch.</p>
+        </div>
+        <div class="pain-card" onclick="this.classList.toggle('sel')">
+          <h4>Knowledge walks out</h4>
+          <p>Institutional memory in senior heads. Rebuilt from scratch when they leave.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Severity — how acute is the pain?</div>
+      <div class="card-sub">Rate 1–5 for each dimension (1 = minor friction, 5 = business-critical)</div>
+      <div class="sev-row">
+        <div class="sev-label">Speed to market</div>
+        <div class="sev-dots" id="sev-speed">
+          <div class="dot on" onclick="setDots('sev-speed',1)"></div>
+          <div class="dot on" onclick="setDots('sev-speed',2)"></div>
+          <div class="dot on" onclick="setDots('sev-speed',3)"></div>
+          <div class="dot" onclick="setDots('sev-speed',4)"></div>
+          <div class="dot" onclick="setDots('sev-speed',5)"></div>
+        </div>
+      </div>
+      <div class="sev-row">
+        <div class="sev-label">Creative boldness surviving to market</div>
+        <div class="sev-dots" id="sev-bold">
+          <div class="dot on" onclick="setDots('sev-bold',1)"></div>
+          <div class="dot on" onclick="setDots('sev-bold',2)"></div>
+          <div class="dot on" onclick="setDots('sev-bold',3)"></div>
+          <div class="dot on" onclick="setDots('sev-bold',4)"></div>
+          <div class="dot" onclick="setDots('sev-bold',5)"></div>
+        </div>
+      </div>
+      <div class="sev-row">
+        <div class="sev-label">Global brand consistency</div>
+        <div class="sev-dots" id="sev-global">
+          <div class="dot on" onclick="setDots('sev-global',1)"></div>
+          <div class="dot on" onclick="setDots('sev-global',2)"></div>
+          <div class="dot" onclick="setDots('sev-global',3)"></div>
+          <div class="dot" onclick="setDots('sev-global',4)"></div>
+          <div class="dot" onclick="setDots('sev-global',5)"></div>
+        </div>
+      </div>
+      <div class="sev-row">
+        <div class="sev-label">Legal confidence in AI-generated content</div>
+        <div class="sev-dots" id="sev-ai">
+          <div class="dot" onclick="setDots('sev-ai',1)"></div>
+          <div class="dot" onclick="setDots('sev-ai',2)"></div>
+          <div class="dot" onclick="setDots('sev-ai',3)"></div>
+          <div class="dot" onclick="setDots('sev-ai',4)"></div>
+          <div class="dot" onclick="setDots('sev-ai',5)"></div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goTo(3)">Next: claims →</button>
+    </div>
+  </div>
+
+  <!-- SECTION 3: CLAIMS -->
+  <div class="section" id="sec-3">
+    <div class="card">
+      <div class="card-title">Seed the claims territory</div>
+      <div class="card-sub">3–5 typical claims this brand makes. Approximations are fine — enough to make the diagnosis feel real.</div>
+      <div id="claims-list">
+        <div class="claim-row">
+          <input type="text" placeholder="e.g. Clinically proven to reduce fine lines in 4 weeks..." />
+          <select><option>High risk</option><option>Medium risk</option><option>Low risk</option></select>
+        </div>
+        <div class="claim-row">
+          <input type="text" placeholder="e.g. #1 recommended by dermatologists in the UK..." />
+          <select><option>High risk</option><option>Medium risk</option><option selected>Low risk</option></select>
+        </div>
+        <div class="claim-row">
+          <input type="text" placeholder="e.g. 100% sustainably sourced ingredients..." />
+          <select><option>High risk</option><option selected>Medium risk</option><option>Low risk</option></select>
+        </div>
+      </div>
+      <button class="add-btn" onclick="addClaim()">+ Add claim</button>
+    </div>
+    <div class="card">
+      <div class="card-title">The boldest thing they want to say</div>
+      <div class="card-sub">The campaign idea that keeps dying in legal. The territory they've never managed to claim at full strength.</div>
+      <textarea id="bold-claim" placeholder="The idea that always gets softened. The claim that would win a Cannes Lion if it ever got through..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo(2)">← Back</button>
+      <button class="btn btn-primary" id="gen-btn" onclick="generate()">Generate diagnosis →</button>
+    </div>
+  </div>
+
+  <!-- SECTION 4: OUTPUT -->
+  <div class="section" id="sec-4">
+    <div class="output-header">
+      <div class="out-eyebrow">Flourish · Architecture diagnosis</div>
+      <div class="out-title" id="out-title">Loading...</div>
+      <div class="out-sub" id="out-sub"></div>
+    </div>
+
+    <div class="metric-grid" id="out-metrics"></div>
+
+    <div class="ai-output" id="out-workflow-wrap">
+      <div class="ai-section-title">Current state workflow</div>
+      <div id="out-workflow"></div>
+    </div>
+
+    <div class="ai-output" id="out-friction-wrap">
+      <div class="ai-section-title">Friction point analysis</div>
+      <div id="out-friction" class="ai-content"></div>
+    </div>
+
+    <div class="ai-output" id="out-claims-wrap">
+      <div class="ai-section-title">Claims territory — architecture gaps</div>
+      <div id="out-claims"></div>
+    </div>
+
+    <div class="ai-output" id="out-ai-wrap">
+      <div class="ai-section-title">AI-generated strategic diagnosis</div>
+      <div id="out-ai" class="ai-content"></div>
+    </div>
+
+    <div class="promise-bar">
+      <div class="promise-text">
+        <strong id="out-brand-name">This brand's</strong> boldest marketing ideas are not the problem.
+        <em>Getting them approved before the cultural moment passes is.</em>
+        Flourish solves that.
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:24px;">
+      <button class="btn btn-secondary" onclick="goTo(3)">← Edit inputs</button>
+      <button class="btn btn-primary" onclick="copyDiagnosis()">Copy diagnosis brief</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---- Navigation ----
+function goTo(n) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.progress-step').forEach((t,i) => {
+    t.classList.remove('active','done');
+    if (i < n-1) t.classList.add('done');
+  });
+  document.getElementById('sec-'+n).classList.add('active');
+  document.getElementById('tab-'+n).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ---- Tag single-select ----
+function sel(el, group) {
+  document.querySelectorAll('#'+group+' .tag').forEach(t => t.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+// ---- Severity dots ----
+function setDots(id, val) {
+  document.querySelectorAll('#'+id+' .dot').forEach((d,i) => d.classList.toggle('on', i<val));
+}
+function getDots(id) {
+  return document.querySelectorAll('#'+id+' .dot.on').length;
+}
+
+// ---- Add claim ----
+function addClaim() {
+  const list = document.getElementById('claims-list');
+  const row = document.createElement('div');
+  row.className = 'claim-row';
+  row.innerHTML = `<input type="text" placeholder="Add another claim..." /><select><option>High risk</option><option>Medium risk</option><option>Low risk</option></select>`;
+  list.appendChild(row);
+}
+
+// ---- Gather data ----
+function getData() {
+  const brand = document.getElementById('brand-name').value || 'the client';
+  const sector = document.getElementById('sector').value || 'consumer goods';
+  const markets = (document.querySelector('#markets .sel')||{}).textContent || '6–15';
+  const campaigns = (document.querySelector('#campaigns .sel')||{}).textContent || '50–200';
+  const vision = document.getElementById('brand-vision').value;
+  const contact = document.getElementById('contact').value;
+  const legal = document.getElementById('legal').value;
+  const stage = document.getElementById('stage').value;
+  const pains = Array.from(document.querySelectorAll('.pain-card.sel h4')).map(h=>h.textContent);
+  const boldClaim = document.getElementById('bold-claim').value;
+  const sevSpeed = getDots('sev-speed');
+  const sevBold = getDots('sev-bold');
+  const sevGlobal = getDots('sev-global');
+  const sevAi = getDots('sev-ai');
+  const claimInputs = document.querySelectorAll('#claims-list input[type=text]');
+  const claimSelects = document.querySelectorAll('#claims-list select');
+  const claims = [];
+  claimInputs.forEach((inp,i) => {
+    if (inp.value.trim()) claims.push({ text: inp.value.trim(), risk: claimSelects[i]?.value||'Medium risk' });
+  });
+  return { brand, sector, markets, campaigns, vision, contact, legal, stage, pains, boldClaim, claims, sevSpeed, sevBold, sevGlobal, sevAi };
+}
+
+// ---- Render static parts ----
+function renderStatic(d) {
+  const campNum = parseInt(d.campaigns.split('–')[0]||'50') || 50;
+  const wasted = Math.round(campNum * 0.47);
+  const legalWks = d.sevAi > 2 ? '10–14' : '8–12';
+
+  document.getElementById('out-title').textContent = d.brand + ' — architecture diagnosis';
+  document.getElementById('out-sub').textContent =
+    `${d.brand} · ${d.sector} · ${d.markets} markets · ~${d.campaigns} campaigns/year · ${new Date().toLocaleDateString('en-GB',{month:'long',year:'numeric'})}`;
+  document.getElementById('out-brand-name').textContent = d.brand + "'s";
+
+  document.getElementById('out-metrics').innerHTML = `
+    <div class="metric-card"><div class="metric-num red">47%</div><div class="metric-label">Marketing capacity lost to approval friction — ~${wasted} campaigns/year of wasted output</div></div>
+    <div class="metric-card"><div class="metric-num amber">${legalWks}wks</div><div class="metric-label">Estimated average legal review cycle based on ${d.sector} sector profile</div></div>
+    <div class="metric-card"><div class="metric-num pink">£0</div><div class="metric-label">Formal value placed on institutional brand knowledge that walks out the door</div></div>
+    <div class="metric-card"><div class="metric-num dim">47+</div><div class="metric-label">Avg tools in enterprise marketing stack — none compliance-aware, none know this brand</div></div>
+  `;
+
+  const wfStages = [
+    { state: d.sevBold > 2 ? 'ok' : 'ok', label: 'Stage 1', name: 'Insight', note: 'Data exists. Not surfaced at brief open.' },
+    { state: d.pains.includes('Claims without context') ? 'warn' : 'ok', label: 'Stage 2 · friction', name: 'Brief', note: 'Claims written without substantiation status. Context stripped before agency handoff.' },
+    { state: 'warn', label: 'Stage 3 · friction', name: 'Agency', note: 'Partners work outside brand intelligence system. Recreate context from scratch.' },
+    { state: d.pains.includes('Legal latency') ? 'broken' : 'warn', label: 'Stage 4 · bottleneck', name: 'Legal review', note: 'No evidence pack received. Compilation begins. ' + legalWks + '-week clock starts here.' },
+    { state: d.pains.includes('Global inconsistency') ? 'broken' : 'warn', label: 'Stage 5 · failure', name: 'To market', note: 'Campaign arrives late. Cultural window passed. Bold ideas softened in revision 3 or 4.' },
+  ];
+  document.getElementById('out-workflow').innerHTML = `<div class="workflow">${wfStages.map(s=>`
+    <div class="wf ${s.state}">
+      <div class="wf-label">${s.label}</div>
+      <div class="wf-name">${s.name}</div>
+      <div class="wf-note">${s.note}</div>
+    </div>`).join('')}</div>`;
+
+  if (d.claims.length > 0) {
+    const rows = d.claims.map(c => {
+      const risk = c.risk;
+      const badgeClass = risk==='High risk' ? 'badge-red' : risk==='Medium risk' ? 'badge-amber' : 'badge-green';
+      const action = risk==='High risk' ? 'Evidence pack required' : risk==='Medium risk' ? 'Review recommended' : 'Pre-approve for vault';
+      const actionClass = risk==='High risk' ? 'badge-pink' : risk==='Medium risk' ? 'badge-amber' : 'badge-green';
+      return `<tr>
+        <td>${c.text}</td>
+        <td><span class="badge badge-gray">${risk.replace(' risk','')}</span></td>
+        <td><span class="badge ${actionClass}">${action}</span></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('out-claims').innerHTML = `
+      <table class="friction-table">
+        <thead><tr><th style="width:55%">Claim</th><th style="width:18%">Risk</th><th style="width:27%">Flourish action</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } else {
+    document.getElementById('out-claims-wrap').style.display = 'none';
+  }
+}
+
+// ---- AI generation ----
+async function callClaude(apiKey, prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) throw new Error('API error ' + res.status);
+  const json = await res.json();
+  return json.content?.[0]?.text || '';
+}
+
+function getNikeDemo() {
+  return `<p><strong>Legal latency is the primary constraint.</strong> Nike's marketing organisation generates bold, culturally urgent work — but that work arrives at legal as propositions, not evidence packs. Legal spends the first two to three weeks of every review cycle compiling the substantiation that should have travelled with the brief. At 500+ campaigns per year, this structural gap costs Nike the equivalent of 235 campaigns worth of approved output annually.</p>
+<p><strong>The claims architecture has four critical gaps.</strong> Performance claims tied to athlete endorsements require independent substantiation per market and per endorsee. Sustainability commitments — particularly forward-looking carbon claims — are high-risk under current CMA and EU Green Claims Directive scrutiny. Comparative superiority claims ("more athletes win in Nike than any other brand") are substantiable but arrive at legal without the evidence pre-assembled. None of these claim types carry approved status that can be reused across campaigns.</p>
+<p><strong>Global inconsistency compounds the speed problem.</strong> Across 190+ markets, Nike's global briefs arrive without market-specific regulatory context embedded. Claims cleared in the US are reviewed from scratch in the EU, Australia, Japan, and MENA — each with different advertising standards, different green claims frameworks, and different rules around performance and efficacy. Regional teams adapt independently, creating brand drift that no central team has full visibility of until it surfaces post-launch.</p>
+<p><strong>The boldest ideas are dying in the fourth revision.</strong> The pattern is consistent: a culturally urgent campaign concept is submitted, legal identifies missing substantiation, the brief goes back, the creative team softens the claim to avoid further delay, and the approved version reaches market three weeks after the cultural window closed. This is not a legal problem. It is an architecture problem — and it is exactly what Flourish is designed to solve.</p>`;
+}
+
+async function generate() {
+  const d = getData();
+  goTo(4);
+  renderStatic(d);
+
+  const apiKey = document.getElementById('api-key').value.trim();
+  const aiWrap = document.getElementById('out-ai');
+  const frictionWrap = document.getElementById('out-friction');
+
+  // Friction analysis
+  if (d.pains.length > 0) {
+    frictionWrap.innerHTML = `<div class="loading"><div class="spinner"></div>Analysing friction points...</div>`;
+  } else {
+    document.getElementById('out-friction-wrap').style.display = 'none';
+  }
+
+  if (!apiKey) {
+    // Demo mode
+    setTimeout(() => {
+      frictionWrap.innerHTML = `
+        <table class="friction-table">
+          <thead><tr><th style="width:22%">Friction point</th><th style="width:18%">Severity</th><th>Impact</th><th style="width:22%">Root cause</th></tr></thead>
+          <tbody>
+            ${d.pains.map((p,i) => {
+              const sevs = ['Critical','Critical','High','High','High','Medium'];
+              const badges = ['badge-red','badge-red','badge-amber','badge-amber','badge-amber','badge-gray'];
+              const impacts = {
+                'Legal latency':'Campaigns miss cultural windows. 47% capacity wasted. Bold ideas softened to avoid repeat review.',
+                'Claims without context':'Legal compiles evidence independently on every brief. 2–3 weeks lost before actual review begins.',
+                'Global inconsistency':'190+ markets adapting independently. Brand drift invisible until post-launch.',
+                'Shadow AI use':'AI-generated content entering campaigns without compliance review. Unmanaged regulatory exposure.',
+                'CMO vision drift':'Junior teams and agencies briefing from caution. The boldness benchmark not accessible outside senior heads.',
+                'Knowledge walks out':'Institutional memory exits with every senior departure. Rebuilt from scratch each time.'
+              };
+              const causes = {
+                'Legal latency':'Briefs arrive at legal without evidence packs',
+                'Claims without context':'No claims architecture linking evidence to claims',
+                'Global inconsistency':'No market-specific regulatory context at brief stage',
+                'Shadow AI use':'No governed AI layer in the marketing workflow',
+                'CMO vision drift':'CMO vision lives in one person\'s head, not the system',
+                'Knowledge walks out':'No institutional knowledge infrastructure'
+              };
+              return `<tr>
+                <td>${p}</td>
+                <td><span class="badge ${badges[i]||'badge-gray'}">${sevs[i]||'Medium'}</span></td>
+                <td>${impacts[p]||'Significant operational and commercial impact.'}</td>
+                <td>${causes[p]||'Structural architecture gap'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+
+      aiWrap.innerHTML = `<div class="loading"><div class="spinner"></div>Generating strategic diagnosis...</div>`;
+      setTimeout(() => { aiWrap.innerHTML = getNikeDemo(); }, 800);
+    }, 600);
+    return;
+  }
+
+  // Live API mode
+  try {
+    frictionWrap.innerHTML = `<div class="loading"><div class="spinner"></div>Generating friction analysis...</div>`;
+    aiWrap.innerHTML = `<div class="loading"><div class="spinner"></div>Building strategic diagnosis...</div>`;
+
+    const claimsStr = d.claims.map(c => `"${c.text}" (${c.risk})`).join(', ') || 'none provided';
+    const prompt = `You are a senior strategist at Flourish, an AI-powered marketing compliance and approval platform. 
+    
+Generate a concise, sharp Architecture Diagnosis for ${d.brand} (${d.sector} sector, ${d.markets} markets, ~${d.campaigns} campaigns/year).
+
+Their pain points: ${d.pains.join(', ') || 'not specified'}.
+Brand vision: ${d.vision || 'not provided'}.
+Their boldest unrealised claim: ${d.boldClaim || 'not provided'}.
+Claims territory: ${claimsStr}.
+Severity scores — Speed: ${d.sevSpeed}/5, Creative boldness: ${d.sevBold}/5, Global consistency: ${d.sevGlobal}/5, AI confidence: ${d.sevAi}/5.
+
+Write 4 paragraphs of diagnostic analysis in the Flourish voice: precise, commercially grounded, structurally focused. Each paragraph is 2–4 sentences. Use bold for the opening phrase of each paragraph. Focus on: (1) the primary structural failure, (2) the claims architecture gap, (3) the global consistency problem, (4) what this means commercially. Do NOT use bullet points. Do NOT be generic — be specific to this brand and sector. End on the framing: "This is not a [people/creativity/legal] problem. It is an architecture problem."`;
+
+    const [frictionText, aiText] = await Promise.all([
+      callClaude(apiKey, `Generate a brief friction point analysis table as plain HTML table rows (no wrapper) for ${d.brand}. For each pain point: [${d.pains.join(', ')}], create a <tr> with: pain point name | severity badge (Critical/High/Medium) | one-sentence commercial impact | one-sentence root cause. Use these exact badge classes in a span: badge-red for Critical, badge-amber for High, badge-gray for Medium. Be specific to ${d.brand} and ${d.sector}. Return ONLY the <tr> elements.`),
+      callClaude(apiKey, prompt)
+    ]);
+
+    frictionWrap.innerHTML = `<table class="friction-table"><thead><tr><th style="width:22%">Friction point</th><th style="width:14%">Severity</th><th>Commercial impact</th><th style="width:24%">Root cause</th></tr></thead><tbody>${frictionText}</tbody></table>`;
+    aiWrap.innerHTML = aiText.split('\n').filter(p=>p.trim()).map(p=>`<p>${p}</p>`).join('');
+
+  } catch(e) {
+    frictionWrap.innerHTML = `<p style="color:var(--text-muted);font-size:13px;">Could not generate — check your API key and try again. (${e.message})</p>`;
+    aiWrap.innerHTML = getNikeDemo();
+  }
+}
+
+// ---- Copy ----
+function copyDiagnosis() {
+  const d = getData();
+  const text = `FLOURISH ARCHITECTURE DIAGNOSIS\n${d.brand} · ${d.sector}\n\nPain points: ${d.pains.join(', ')}\nMarkets: ${d.markets} | Campaigns/year: ${d.campaigns}\n\nSpeed cost: 47% of marketing capacity\nLegal review: 8–12 weeks average\n\nClaims territory:\n${d.claims.map(c=>`- ${c.text} (${c.risk})`).join('\n')}\n\nBoldest unrealised claim: ${d.boldClaim}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => btn.textContent = orig, 2000);
+  });
+}
+</script>
+</body>
+</html>
